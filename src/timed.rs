@@ -41,6 +41,19 @@ where
         }
     }
 }
+impl<M: Monotonic, T, V: Value<T = T>> TimedDebouncer<M, T, V> {
+    /// Get the debounce time.
+    pub fn debounce_time(&self) -> M::Duration
+    where
+        M::Duration: Copy,
+    {
+        self.debounce_time
+    }
+    /// Changes the debounce time.
+    pub fn set_debounce_time(&mut self, debounce_time: M::Duration) {
+        self.debounce_time = debounce_time;
+    }
+}
 impl<M, T, V> TimedDebouncer<M, T, V>
 where
     M: Monotonic,
