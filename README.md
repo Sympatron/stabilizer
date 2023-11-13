@@ -5,7 +5,7 @@ This crate provides a time-based debouncer for handling signal noise in digital 
 ## Features
 
 - **Generic Implementation**: Works with any data type that implements the `PartialEq` and `Copy` traits.
-- **Flexible Timing**: Utilizes the `Monotonic` trait which is already implemented for all [`rtic_time::Monotonic`](https://docs.rs/rtic-time/latest/rtic_time/trait.Monotonic.html) for time handling, allowing for integration with any (global) timer implementations.
+- **Flexible Timing**: Utilizes the `Monotonic` trait for time handling (which is already implemented for all instances of [`rtic_time::Monotonic`](https://docs.rs/rtic-time/latest/rtic_time/trait.Monotonic.html)), allowing for integration with any (global) timer implementation.
 - **State Tracking**: Tracks the current and previous states of the input, providing insight into signal transitions.
 
 ## Usage
