@@ -1,6 +1,4 @@
-use crate::{InitializedValue, State, UninitializedValue, Value};
-
-use rtic_time::Monotonic;
+use crate::{InitializedValue, Monotonic, State, UninitializedValue, Value};
 
 /// Represents a debouncer for handling signal noise in digital input signals.
 /// It stabilizes the signal over a specified debounce period.
@@ -132,22 +130,12 @@ mod tests {
     impl Monotonic for MockMonotonic {
         type Instant = fugit::TimerInstantU64<1_000_000>;
         type Duration = fugit::TimerDurationU64<1_000_000>;
-        const ZERO: Self::Instant = Self::Instant::from_ticks(0);
 
         fn now() -> Self::Instant {
             if MUTEX.try_lock().is_ok() {
                 panic!("Not locked");
             }
             unsafe { Self::Instant::from_ticks(NOW) }
-        }
-        fn set_compare(_instant: Self::Instant) {
-            unimplemented!()
-        }
-        fn clear_compare_flag() {
-            unimplemented!()
-        }
-        fn pend_interrupt() {
-            unimplemented!()
         }
     }
 

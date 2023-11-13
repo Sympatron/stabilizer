@@ -47,8 +47,30 @@
 mod timed;
 mod value;
 
+use core::ops::Add;
+
 pub use timed::TimedDebouncer;
 pub(crate) use value::{InitializedValue, UninitializedValue, Value};
+
+/// # Monotonic clock definition
+///
+/// If the feature `rtic-time` is enabled this will be automatically implemented for all `rtic_time::Monotonic`
+pub trait Monotonic {
+    /// The type for instant, defining an instant in time.
+    type Instant: Ord + Copy + Add<Self::Duration, Output = Self::Instant>;
+    /// The type for duration, defining an duration of time.
+    type Duration;
+    /// Get the current time.
+    fn now() -> Self::Instant;
+}
+#[cfg(feature = "rtic-time")]
+impl<M: rtic_time::Monotonic> Monotonic for M {
+    type Instant = M::Instant;
+    type Duration = M::Duration;
+    fn now() -> Self::Instant {
+        Self::now()
+    }
+}
 
 /// Represents the state of a debounced input.
 #[derive(Debug, PartialEq, Eq)]

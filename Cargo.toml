@@ -4,7 +4,10 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-rtic-time = { git = "https://github.com/Sympatron/rtic.git" }
+rtic-time = { optional = true, git = "https://github.com/Sympatron/rtic.git" }
+
+[features]
+default = ["rtic-time"]
 
 [dev-dependencies]
 fugit = "0.3.7"
