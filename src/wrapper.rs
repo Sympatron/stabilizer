@@ -47,3 +47,23 @@ where
         self.read().stable()
     }
 }
+
+impl<I: ehal0::digital::v2::InputPin> Input<Result<ehal0::digital::v2::PinState, I::Error>> for I {
+    fn read(&mut self) -> Result<ehal0::digital::v2::PinState, I::Error> {
+        if self.is_high()? {
+            Ok(ehal0::digital::v2::PinState::High)
+        } else {
+            Ok(ehal0::digital::v2::PinState::Low)
+        }
+    }
+}
+
+impl<I: ehal1::digital::InputPin> Input<Result<ehal1::digital::PinState, I::Error>> for I {
+    fn read(&mut self) -> Result<ehal1::digital::PinState, I::Error> {
+        if self.is_high()? {
+            Ok(ehal1::digital::PinState::High)
+        } else {
+            Ok(ehal1::digital::PinState::Low)
+        }
+    }
+}

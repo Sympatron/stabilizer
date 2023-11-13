@@ -5,9 +5,11 @@ edition = "2021"
 
 [dependencies]
 rtic-time = { optional = true, git = "https://github.com/Sympatron/rtic.git" }
+ehal0 = { optional = true, version = "0.2.7", package = "embedded-hal", features = ["unproven"] }
+ehal1 = { optional = true, version = "1.0.0-rc.1", package = "embedded-hal" }
 
 [features]
-default = ["rtic-time"]
+default = ["rtic-time", "ehal0", "ehal1"]
 
 [dev-dependencies]
 fugit = "0.3.7"
