@@ -5,3 +5,8 @@ edition = "2021"
 
 [dependencies]
 rtic-time = { git = "https://github.com/Sympatron/rtic.git" }
+
+[dev-dependencies]
+cortex-m = "0.7.7"
+fugit = "0.3.7"
+rtic-monotonics = { git = "https://github.com/Sympatron/rtic.git", features = ["cortex-m-systick"] }

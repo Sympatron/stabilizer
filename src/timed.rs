@@ -241,8 +241,125 @@ where
         }
     }
 
-    /// Reads the current stable value, if available.
+    /// Reads the current stable value, if available. Potentially updating the internal state.
     pub fn read_value(&mut self) -> Option<T> {
-        return self.read().value();
+        return self.read().stable_value();
+    }
+    /// Reads the current stable value, if available. This does not update the internal state and just returns the last stable value.
+    pub fn read_stable(&self) -> Option<T> {
+        return self.last_stable;
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use fugit::ExtU64;
+    extern crate std;
+
+    struct MockMonotonic;
+    static mut NOW: u64 = 0;
+    static MUTEX: std::sync::Mutex<()> = std::sync::Mutex::new(());
+    impl MockMonotonic {
+        pub fn reset() {
+            unsafe { NOW = 0 }
+        }
+        pub fn add(duration: <Self as Monotonic>::Duration) {
+            unsafe { NOW += duration.ticks() }
+        }
+    }
+    impl Monotonic for MockMonotonic {
+        type Instant = fugit::TimerInstantU64<1_000_000>;
+        type Duration = fugit::TimerDurationU64<1_000_000>;
+        const ZERO: Self::Instant = Self::Instant::from_ticks(0);
+
+        fn now() -> Self::Instant {
+            if MUTEX.try_lock().is_ok() {
+                panic!("Not locked");
+            }
+            unsafe { Self::Instant::from_ticks(NOW) }
+        }
+        fn set_compare(_instant: Self::Instant) {
+            unimplemented!()
+        }
+        fn clear_compare_flag() {
+            unimplemented!()
+        }
+        fn pend_interrupt() {
+            unimplemented!()
+        }
+    }
+
+    fn run_test(f: impl FnOnce(std::sync::MutexGuard<()>) -> ()) {
+        let lock = MUTEX.lock().unwrap();
+        MockMonotonic::reset();
+        f(lock);
+    }
+
+    #[test]
+    fn test_initial_value() {
+        run_test(|_| {
+            let mut debouncer = TimedDebouncer::<_, MockMonotonic>::new(false, 10.millis());
+            assert_eq!(debouncer.read(), State::Stable { value: false });
+            let state = debouncer.update(false);
+            assert_eq!(state, State::Stable { value: false });
+            let state = debouncer.update(true);
+            assert_eq!(
+                state,
+                State::Unstable {
+                    stable: false,
+                    most_recent: true
+                }
+            );
+            let state = debouncer.update(false);
+            assert_eq!(state, State::Stable { value: false });
+            debouncer.update(true);
+
+            MockMonotonic::add(11.millis()); // Simulate time passing
+            let state = debouncer.update(true);
+            assert_eq!(
+                state,
+                State::Transitioned {
+                    stable: true,
+                    previous_stable: false
+                }
+            );
+            let state = debouncer.update(true);
+            assert_eq!(state, State::Stable { value: true });
+        });
+    }
+
+    #[test]
+    fn test_unknown_value() {
+        run_test(|_| {
+            let mut debouncer =
+                TimedDebouncer::<_, MockMonotonic, Option<bool>>::new_unknown(10.millis());
+            assert_eq!(
+                debouncer.read(),
+                State::Unstable {
+                    stable: None,
+                    most_recent: None
+                }
+            );
+            let state = debouncer.update(false);
+            assert_eq!(
+                state,
+                State::Unstable {
+                    stable: None,
+                    most_recent: Some(false)
+                }
+            );
+            MockMonotonic::add(11.millis()); // Simulate time passing
+            let state = debouncer.update(false);
+            assert_eq!(
+                state,
+                State::Transitioned {
+                    stable: false,
+                    previous_stable: None
+                }
+            );
+            let state = debouncer.update(false);
+            assert_eq!(state, State::Stable { value: false });
+        });
     }
 }
