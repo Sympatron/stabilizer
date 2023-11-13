@@ -30,7 +30,7 @@ where
 impl<M, T> TimedDebouncer<M, T, UninitializedValue<T>>
 where
     M: Monotonic,
-    T: Copy + Default,
+    T: Copy,
     M::Duration: Copy,
 {
     /// Creates a new Debouncer that starts with an unkown state.
