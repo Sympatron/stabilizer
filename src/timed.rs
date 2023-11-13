@@ -18,9 +18,9 @@ where
     /// Creates a new Debouncer with a known initial value.
     pub fn new(initial_value: T, debounce_time: M::Duration) -> Self {
         Self {
-            last_stable: initial_value.into(),
-            last_value: initial_value.into(),
-            last_change_time: M::now(),
+            last_stable: InitializedValue::new(initial_value),
+            last_value: InitializedValue::new(initial_value),
+            last_change_time: M::ZERO,
             debounce_time,
         }
     }
@@ -130,6 +130,7 @@ mod tests {
     impl Monotonic for MockMonotonic {
         type Instant = fugit::TimerInstantU64<1_000_000>;
         type Duration = fugit::TimerDurationU64<1_000_000>;
+        const ZERO: Self::Instant = Self::Instant::from_ticks(0);
 
         fn now() -> Self::Instant {
             if MUTEX.try_lock().is_ok() {

@@ -68,6 +68,11 @@ impl<T: Copy> Value for InitializedValue<T> {
         unreachable!()
     }
 }
+impl<T> InitializedValue<T> {
+    pub(crate) const fn new(value: T) -> Self {
+        InitializedValue(value)
+    }
+}
 impl<T> Deref for InitializedValue<T> {
     type Target = T;
     #[inline(always)]
