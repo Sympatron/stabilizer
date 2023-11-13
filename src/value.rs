@@ -10,6 +10,7 @@ pub trait Value: Deref<Target = Self::V> + private::Sealed {
     type V;
     fn get(&self) -> Self::V;
     fn try_get(&self) -> Option<Self::T>;
+    fn default() -> Self::V;
 }
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub(crate) struct UninitializedValue<T>(Option<T>);
@@ -24,6 +25,9 @@ impl<T: Copy> Value for UninitializedValue<T> {
     #[inline(always)]
     fn try_get(&self) -> Option<Self::T> {
         self.0
+    }
+    fn default() -> Self::V {
+        None
     }
 }
 impl<T> Default for UninitializedValue<T> {
@@ -57,6 +61,11 @@ impl<T: Copy> Value for InitializedValue<T> {
     #[inline(always)]
     fn try_get(&self) -> Option<Self::T> {
         Some(self.0)
+    }
+    #[inline(always)]
+    fn default() -> Self::V {
+        // Cannot be reached, beacause `try_get()` always returns `Some`
+        unreachable!()
     }
 }
 impl<T> Deref for InitializedValue<T> {

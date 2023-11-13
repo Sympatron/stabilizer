@@ -47,7 +47,7 @@ where
     M::Duration: Copy,
     T: PartialEq + Copy,
     V: Value<T = T> + Copy + From<T>,
-    V::V: Default + Copy + From<T>,
+    V::V: Copy + From<T>,
 {
     /// Updates the debouncer state with a new value and returns the current state.
     pub fn update(self: &mut Self, new_value: T) -> State<T, V> {
@@ -94,8 +94,8 @@ where
             self.update(last_value)
         } else {
             State::Unstable {
-                stable: Default::default(),
-                most_recent: Default::default(),
+                stable: V::default(),
+                most_recent: V::default(),
             }
         }
     }
