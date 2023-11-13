@@ -1,4 +1,4 @@
-use crate::{InitializedValue, UninitializedValue, Value};
+use crate::{InitializedValue, State, UninitializedValue, Value};
 
 use rtic_time::Monotonic;
 
@@ -9,76 +9,6 @@ pub struct TimedDebouncer<M: Monotonic, T, V: Value<T = T> = InitializedValue<T>
     last_value: V,
     last_change_time: M::Instant,
     debounce_time: M::Duration,
-}
-
-/// Represents the state of a debounced input.
-#[derive(Debug, PartialEq, Eq)]
-pub enum State<T, V: Value<T = T>> {
-    /// Indicates a stable state with a known value.
-    Stable {
-        /// Current stable value.
-        value: T,
-    },
-    /// Indicates an unstable state where the value is fluctuating.
-    Unstable {
-        /// Current stable value.
-        stable: V::V,
-        /// Most recent but potentially unstable value.
-        most_recent: V::V,
-    },
-    /// Indicates that a transition has occurred to a new stable state.
-    Transitioned {
-        /// New stable value after transition.
-        stable: T,
-        /// Old stable value before this transition.
-        previous_stable: V::V,
-    },
-}
-
-impl<T: Copy, V: Value<T = T>> State<T, V>
-where
-    V::V: Copy + From<T>,
-{
-    /// Returns the current stable value of the state, if available.
-    pub fn stable_value(self: &Self) -> V::V {
-        match self {
-            State::Stable { value } => (*value).into(),
-            State::Unstable {
-                stable,
-                most_recent: _,
-            } => (*stable).into(),
-            State::Transitioned {
-                stable: new_stable,
-                previous_stable: _,
-            } => (*new_stable).into(),
-        }
-    }
-    /// Returns the most recent value of the state, if available. This value is potentially not stable yet.
-    pub fn most_recent_value(self: &Self) -> V::V {
-        match self {
-            State::Stable { value } => (*value).into(),
-            State::Unstable {
-                stable: _,
-                most_recent,
-            } => *most_recent,
-            State::Transitioned {
-                stable: new_stable,
-                previous_stable: _,
-            } => (*new_stable).into(),
-        }
-    }
-}
-impl<T, V: Value<T = T>> State<T, V> {
-    /// Checks if the state has transitioned to a new value.
-    pub fn transitioned(self: &Self) -> bool {
-        match self {
-            State::Transitioned {
-                stable: _,
-                previous_stable: _,
-            } => true,
-            _ => false,
-        }
-    }
 }
 
 impl<M, T> TimedDebouncer<M, T, InitializedValue<T>>
