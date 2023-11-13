@@ -46,11 +46,13 @@
 
 mod timed;
 mod value;
+mod wrapper;
 
 use core::ops::Add;
 
 pub use timed::TimedDebouncer;
 pub(crate) use value::{InitializedValue, UninitializedValue, Value};
+pub use wrapper::{DebouncedInput, Input};
 
 /// # Monotonic clock definition
 ///
