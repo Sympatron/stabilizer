@@ -17,7 +17,7 @@
 //! Systick::start(systick, 12_000_000, systick_token);
 //!
 //! // Initialize the debouncer with a starting value and a debounce duration
-//! let mut debouncer = TimedDebouncer::<_, Systick>::new(false, 10.millis());
+//! let mut debouncer = TimedDebouncer::<Systick, _>::new(false, 10.millis());
 //!
 //! loop {
 //!     // Update the debouncer with new values as they come in
@@ -79,7 +79,7 @@ where
     V::V: Copy + From<T>,
 {
     /// Returns the current stable value of the state, if available.
-    pub fn stable_value(self: &Self) -> V::V {
+    pub fn stable(self: &Self) -> V::V {
         match self {
             State::Stable { value } => (*value).into(),
             State::Unstable {
@@ -93,7 +93,7 @@ where
         }
     }
     /// Returns the most recent value of the state, if available. This value is potentially not stable yet.
-    pub fn most_recent_value(self: &Self) -> V::V {
+    pub fn most_recent(self: &Self) -> V::V {
         match self {
             State::Stable { value } => (*value).into(),
             State::Unstable {

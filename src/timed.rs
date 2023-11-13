@@ -104,7 +104,7 @@ where
 
     /// Reads the current stable value, if available. Potentially updating the internal state.
     pub fn read_value(&mut self) -> V::V {
-        self.read().stable_value()
+        self.read().stable()
     }
     /// Reads the current stable value, if available. This does not update the internal state and just returns the last stable value.
     pub fn read_stable(&self) -> V::V {
