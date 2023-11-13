@@ -1,20 +1,19 @@
-use core::marker::PhantomData;
+use crate::{InitializedValue, UninitializedValue, Value};
 
 use rtic_time::Monotonic;
 
 /// Represents a debouncer for handling signal noise in digital input signals.
 /// It stabilizes the signal over a specified debounce period.
-pub struct TimedDebouncer<T, M: Monotonic, V = T> {
+pub struct TimedDebouncer<M: Monotonic, T, V: Value<T = T> = InitializedValue<T>> {
     last_stable: V,
     last_value: V,
     last_change_time: M::Instant,
     debounce_time: M::Duration,
-    _t: PhantomData<T>,
 }
 
 /// Represents the state of a debounced input.
 #[derive(Debug, PartialEq, Eq)]
-pub enum State<T, V> {
+pub enum State<T, V: Value<T = T>> {
     /// Indicates a stable state with a known value.
     Stable {
         /// Current stable value.
@@ -23,68 +22,41 @@ pub enum State<T, V> {
     /// Indicates an unstable state where the value is fluctuating.
     Unstable {
         /// Current stable value.
-        stable: V,
+        stable: V::V,
         /// Most recent but potentially unstable value.
-        most_recent: V,
+        most_recent: V::V,
     },
     /// Indicates that a transition has occurred to a new stable state.
     Transitioned {
         /// New stable value after transition.
         stable: T,
         /// Old stable value before this transition.
-        previous_stable: V,
+        previous_stable: V::V,
     },
 }
 
-impl<T: Copy> State<T, T> {
-    /// Returns the current value of the state
-    pub fn stable_value(self: &Self) -> T {
-        match self {
-            State::Stable { value } => *value,
-            State::Unstable {
-                stable,
-                most_recent: _,
-            } => *stable,
-            State::Transitioned {
-                stable: new_stable,
-                previous_stable: _,
-            } => *new_stable,
-        }
-    }
-    /// Returns the most recent value of the state. This value is potentially not stable yet.
-    pub fn most_recent_value(self: &Self) -> T {
-        match self {
-            State::Stable { value } => *value,
-            State::Unstable {
-                stable: _,
-                most_recent,
-            } => *most_recent,
-            State::Transitioned {
-                stable: new_stable,
-                previous_stable: _,
-            } => *new_stable,
-        }
-    }
-}
-impl<T: Copy> State<T, Option<T>> {
+impl<T: Copy, V: Value<T = T>> State<T, V>
+where
+    V::V: Copy + From<T>,
+{
     /// Returns the current stable value of the state, if available.
-    pub fn stable_value(self: &Self) -> Option<T> {
+    pub fn stable_value(self: &Self) -> V::V {
         match self {
-            State::Stable { value } => Some(*value),
+            State::Stable { value } => (*value).into(),
             State::Unstable {
                 stable,
                 most_recent: _,
-            } => *stable,
+            } => (*stable).into(),
             State::Transitioned {
                 stable: new_stable,
                 previous_stable: _,
-            } => Some(*new_stable),
+            } => (*new_stable).into(),
         }
     }
     /// Returns the most recent value of the state, if available. This value is potentially not stable yet.
-    pub fn most_recent_value(self: &Self) -> Option<T> {
+    pub fn most_recent_value(self: &Self) -> V::V {
         match self {
-            State::Stable { value } => Some(*value),
+            State::Stable { value } => (*value).into(),
             State::Unstable {
                 stable: _,
                 most_recent,
@@ -92,11 +64,11 @@ impl<T: Copy> State<T, Option<T>> {
             State::Transitioned {
                 stable: new_stable,
                 previous_stable: _,
-            } => Some(*new_stable),
+            } => (*new_stable).into(),
         }
     }
 }
-impl<T, V> State<T, V> {
+impl<T, V: Value<T = T>> State<T, V> {
     /// Checks if the state has transitioned to a new value.
     pub fn transitioned(self: &Self) -> bool {
         match self {
@@ -109,97 +81,56 @@ impl<T, V> State<T, V> {
     }
 }
 
-impl<T, M> TimedDebouncer<T, M, T>
+impl<M, T> TimedDebouncer<M, T, InitializedValue<T>>
 where
     M: Monotonic,
+    T: Copy,
     M::Duration: Copy,
-    T: PartialEq + Copy,
 {
-    /// Creates a new Debouncer with a known initial value and debounce time.
-    pub fn new(start_value: T, debounce_time: M::Duration) -> Self {
+    /// Creates a new Debouncer with a known initial value.
+    pub fn new(initial_value: T, debounce_time: M::Duration) -> Self {
         Self {
-            last_stable: start_value,
-            last_value: start_value,
+            last_stable: initial_value.into(),
+            last_value: initial_value.into(),
             last_change_time: M::now(),
             debounce_time,
-            _t: PhantomData,
         }
-    }
-    /// Updates the debouncer state with a new value and returns the current state.
-    pub fn update(self: &mut Self, new_value: T) -> State<T, T> {
-        if self.last_stable == new_value {
-            // value stayed stable or returned to stable
-            self.last_value = new_value;
-            return State::Stable {
-                value: self.last_stable,
-            };
-        }
-        if self.last_value != new_value {
-            // value changed since last update
-            self.last_change_time = M::now();
-        }
-
-        self.last_value = new_value;
-
-        if M::now() >= self.last_change_time + self.debounce_time {
-            // transitioned to a new state
-            let last_stable = self.last_stable;
-            self.last_stable = new_value;
-            State::Transitioned {
-                stable: new_value,
-                previous_stable: last_stable,
-            }
-        } else {
-            // not stable at the moment
-            State::Unstable {
-                stable: self.last_stable,
-                most_recent: new_value,
-            }
-        }
-    }
-
-    /// Reads the current state of the debouncer, updating it with the last known value.
-    pub fn read(&mut self) -> State<T, T> {
-        // Update the debouncer with the current value to potentially change its state.
-        self.update(self.last_value)
-    }
-    /// Reads the current stable value, if available.
-    pub fn read_value(&mut self) -> T {
-        return self.read().stable_value();
-    }
-    /// Reads the current stable value, if available. This does not update the internal state and just returns the last stable value.
-    pub fn read_stable(&self) -> T {
-        return self.last_stable;
     }
 }
-
-impl<T, M> TimedDebouncer<T, M, Option<T>>
+impl<M, T> TimedDebouncer<M, T, UninitializedValue<T>>
+where
+    M: Monotonic,
+    T: Copy + Default,
+    M::Duration: Copy,
+{
+    /// Creates a new Debouncer that starts with an unkown state.
+    pub fn new_unknown(debounce_time: M::Duration) -> Self {
+        Self {
+            last_stable: Default::default(),
+            last_value: Default::default(),
+            last_change_time: M::now(),
+            debounce_time,
+        }
+    }
+}
+impl<M, T, V> TimedDebouncer<M, T, V>
 where
     M: Monotonic,
     M::Duration: Copy,
     T: PartialEq + Copy,
+    V: Value<T = T> + Copy + From<T>,
+    V::V: Default + Copy + From<T>,
 {
-    /// Creates a new Debouncer without a known initial value.
-    pub fn new_unknown(debounce_time: M::Duration) -> Self {
-        Self {
-            last_stable: None,
-            last_value: None,
-            last_change_time: M::now(),
-            debounce_time,
-            _t: PhantomData,
-        }
-    }
-
     /// Updates the debouncer state with a new value and returns the current state.
-    pub fn update(self: &mut Self, new_value: T) -> State<T, Option<T>> {
-        if let Some(last_stable) = self.last_stable {
+    pub fn update(self: &mut Self, new_value: T) -> State<T, V> {
+        if let Some(last_stable) = self.last_stable.try_get() {
             if last_stable == new_value {
                 // value stayed stable or returned to stable
-                self.last_value = Some(new_value);
+                self.last_value = new_value.into();
                 return State::Stable { value: last_stable };
             }
         }
-        if let Some(last_value) = self.last_value {
+        if let Some(last_value) = self.last_value.try_get() {
             if last_value != new_value {
                 // value changed since last update
                 self.last_change_time = M::now();
@@ -209,45 +140,45 @@ where
             self.last_change_time = M::now();
         }
 
-        self.last_value = Some(new_value);
+        self.last_value = new_value.into();
 
         if M::now() >= self.last_change_time + self.debounce_time {
             // transitioned to a new state
             let last_stable = self.last_stable;
-            self.last_stable = Some(new_value);
+            self.last_stable = new_value.into();
             State::Transitioned {
                 stable: new_value,
-                previous_stable: last_stable,
+                previous_stable: *last_stable,
             }
         } else {
             // not stable at the moment
             State::Unstable {
-                stable: self.last_stable,
-                most_recent: Some(new_value),
+                stable: *self.last_stable,
+                most_recent: new_value.into(),
             }
         }
     }
 
     /// Reads the current state of the debouncer, updating it with the last known value.
-    pub fn read(&mut self) -> State<T, Option<T>> {
+    pub fn read(&mut self) -> State<T, V> {
         // Update the debouncer with the current value to potentially change its state.
-        if let Some(last_value) = self.last_value {
+        if let Some(last_value) = self.last_value.try_get() {
             self.update(last_value)
         } else {
             State::Unstable {
-                stable: None,
-                most_recent: None,
+                stable: Default::default(),
+                most_recent: Default::default(),
             }
         }
     }
 
     /// Reads the current stable value, if available. Potentially updating the internal state.
-    pub fn read_value(&mut self) -> Option<T> {
-        return self.read().stable_value();
+    pub fn read_value(&mut self) -> V::V {
+        self.read().stable_value()
     }
     /// Reads the current stable value, if available. This does not update the internal state and just returns the last stable value.
-    pub fn read_stable(&self) -> Option<T> {
-        return self.last_stable;
+    pub fn read_stable(&self) -> V::V {
+        *self.last_stable
     }
 }
 
@@ -299,7 +230,7 @@ mod tests {
     #[test]
     fn test_initial_value() {
         run_test(|_| {
-            let mut debouncer = TimedDebouncer::<_, MockMonotonic>::new(false, 10.millis());
+            let mut debouncer = TimedDebouncer::<MockMonotonic, _>::new(false, 10.millis());
             assert_eq!(debouncer.read(), State::Stable { value: false });
             let state = debouncer.update(false);
             assert_eq!(state, State::Stable { value: false });
@@ -332,8 +263,7 @@ mod tests {
     #[test]
     fn test_unknown_value() {
         run_test(|_| {
-            let mut debouncer =
-                TimedDebouncer::<_, MockMonotonic, Option<bool>>::new_unknown(10.millis());
+            let mut debouncer = TimedDebouncer::<MockMonotonic, _, _>::new_unknown(10.millis());
             assert_eq!(
                 debouncer.read(),
                 State::Unstable {

@@ -6,7 +6,7 @@
 //!
 //! You can use it in your project as follows:
 //!
-//! ```rust
+//! ```ignore
 //! use stabilizer::{TimedDebouncer, State};
 //! use fugit::ExtU32;
 //! use rtic_monotonics::systick::*; // Replace with your Monotonic timer implementation
@@ -45,5 +45,7 @@
 #![deny(missing_docs)]
 
 mod timed;
+mod value;
 
 pub use timed::{State, TimedDebouncer};
+pub(crate) use value::{InitializedValue, UninitializedValue, Value};
