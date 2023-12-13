@@ -1,3 +1,5 @@
+use core::{cell::RefCell, convert::Infallible};
+
 use crate::{InitializedValue, Monotonic, State, TimedDebouncer};
 
 /// Trait to interface with [`DebouncedInput`].
@@ -53,25 +55,96 @@ where
 {
     fn read(&mut self) -> T {
         self.read().stable()
+#[cfg(feature = "ehal0")]
+impl<M, I> InputPinV0 for DebouncedInput<M, Result<PinStateV0, Infallible>, I>
+where
+    I: InputPinV0,
+    M: Monotonic,
+    M::Duration: Copy,
+{
+    type Error = Infallible;
+    fn is_high(&self) -> Result<bool, Self::Error> {
+        self.read_stable().and_then(|s| Ok(s == PinStateV0::High))
+    }
+    fn is_low(&self) -> Result<bool, Self::Error> {
+        self.read_stable().and_then(|s| Ok(s == PinStateV0::Low))
     }
 }
 
-impl<I: ehal0::digital::v2::InputPin> Input<Result<ehal0::digital::v2::PinState, I::Error>> for I {
-    fn read(&mut self) -> Result<ehal0::digital::v2::PinState, I::Error> {
+#[cfg_attr(docsrs, doc(cfg(feature = "ehal1")))]
+#[cfg(feature = "ehal1")]
+impl<M: Monotonic, T: Copy, I> ehal1::digital::ErrorType
+    for DebouncedInput<M, Result<T, Infallible>, I>
+{
+    type Error = Infallible;
+}
+#[cfg_attr(docsrs, doc(cfg(feature = "ehal1")))]
+#[cfg(feature = "ehal1")]
+impl<M: Monotonic, T: Copy, I> ehal1::digital::ErrorType
+    for DebouncedInputRef<M, Result<T, Infallible>, I>
+{
+    type Error = Infallible;
+}
+struct DebouncedInputRef<M: Monotonic, T: Copy, I>(RefCell<DebouncedInput<M, T, I>>);
+
+// #[cfg_attr(docsrs, doc(cfg(feature = "ehal0")))]
+// #[cfg(feature = "ehal0")]
+// impl<M, I> InputPinV0
+//     for DebouncedInputRef<M, Result<PinStateV0, Infallible>, I>
+// where
+//     I: InputPinV1<Error = Infallible>,
+//     M: Monotonic,
+//     M::Duration: Copy,
+// {
+//     type Error = Infallible;
+//     fn is_high(&self) -> Result<bool, Self::Error> {
+//         let input = &mut *self.0.borrow_mut();
+//         Ok(input.read().unwrap_safe().stable() == PinStateV1::High)
+//     }
+//     fn is_low(&self) -> Result<bool, Self::Error> {
+//         let input = &mut *self.0.borrow_mut();
+//         Ok(input.read().unwrap_safe().stable() == PinStateV1::Low)
+//     }
+// }
+// #[cfg_attr(docsrs, doc(cfg(feature = "ehal1")))]
+// #[cfg(feature = "ehal1")]
+// impl<M, I> InputPinV1
+//     for DebouncedInputRef<M, Result<PinStateV1, Infallible>, I>
+// where
+//     I: InputPinV1<Error = Infallible>,
+//     M: Monotonic,
+//     M::Duration: Copy,
+// {
+//     fn is_high(&self) -> Result<bool, Self::Error> {
+//         let input = &mut *self.0.borrow_mut();
+//         Ok(input.read().unwrap_safe().stable() == PinStateV1::High)
+//     }
+//     fn is_low(&self) -> Result<bool, Self::Error> {
+//         let input = &mut *self.0.borrow_mut();
+//         Ok(input.read().unwrap_safe().stable() == PinStateV1::Low)
+//     }
+// }
+
+#[cfg_attr(docsrs, doc(cfg(feature = "ehal0")))]
+#[cfg(feature = "ehal0")]
+impl<I: InputPinV0> Input<Result<PinStateV0, I::Error>> for I {
+    fn read(&mut self) -> Result<PinStateV0, I::Error> {
         if self.is_high()? {
-            Ok(ehal0::digital::v2::PinState::High)
+            Ok(PinStateV0::High)
         } else {
-            Ok(ehal0::digital::v2::PinState::Low)
+            Ok(PinStateV0::Low)
         }
     }
 }
 
-impl<I: ehal1::digital::InputPin> Input<Result<ehal1::digital::PinState, I::Error>> for I {
-    fn read(&mut self) -> Result<ehal1::digital::PinState, I::Error> {
+#[cfg_attr(docsrs, doc(cfg(feature = "ehal1")))]
+#[cfg(feature = "ehal1")]
+impl<I: InputPinV1> Input<Result<PinStateV1, I::Error>> for I {
+    fn read(&mut self) -> Result<PinStateV1, I::Error> {
         if self.is_high()? {
-            Ok(ehal1::digital::PinState::High)
+            Ok(PinStateV1::High)
         } else {
-            Ok(ehal1::digital::PinState::Low)
+            Ok(PinStateV1::Low)
         }
     }
 }
