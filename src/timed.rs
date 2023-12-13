@@ -117,6 +117,13 @@ where
     pub fn read_value(&mut self) -> V::V {
         self.read().stable()
     }
+}
+impl<M, T, V> TimedDebouncer<M, T, V>
+where
+    M: Monotonic,
+    V: Value<T = T>,
+    V::V: Copy,
+{
     /// Reads the current stable value, if available. This does not update the internal state and just returns the last stable value.
     pub fn read_stable(&self) -> V::V {
         *self.last_stable

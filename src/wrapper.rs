@@ -30,6 +30,14 @@ where
     pub fn read(&mut self) -> State<T, InitializedValue<T>> {
         self.debouncer.update(self.input.read())
     }
+}
+
+impl<M, T, I> DebouncedInput<M, T, I>
+where
+    M: Monotonic,
+    M::Duration: Copy,
+    T: Copy + PartialEq,
+{
     /// Read the last stable state of the input.
     pub fn read_stable(&self) -> T {
         self.debouncer.read_stable()
