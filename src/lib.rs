@@ -48,7 +48,7 @@ mod timed;
 mod value;
 mod wrapper;
 
-use core::ops::Add;
+use core::{convert::Infallible, ops::Add};
 
 pub use timed::TimedDebouncer;
 pub(crate) use value::{InitializedValue, UninitializedValue, Value};
@@ -145,5 +145,39 @@ impl<T, V: Value<T = T>> State<T, V> {
             } => true,
             _ => false,
         }
+    }
+}
+impl<T: Copy, V: Value<T = Result<T, Infallible>, V = Result<T, Infallible>>>
+    State<Result<T, Infallible>, V>
+{
+    /// Turns a `State<Result<T>>` into a `State<T>`. Never panics.
+    pub fn unwrap_safe(&self) -> State<T, InitializedValue<T>> {
+        // SAFETY: since the Error type is Infallible unwrap can never panic
+        unsafe {
+            match self {
+                State::Stable { value } => State::Stable {
+                    value: *value.as_ref().unwrap_unchecked(),
+                },
+                State::Unstable {
+                    stable,
+                    most_recent,
+                } => State::Unstable {
+                    stable: *stable.as_ref().unwrap_unchecked(),
+                    most_recent: *most_recent.as_ref().unwrap_unchecked(),
+                },
+                State::Transitioned {
+                    stable,
+                    previous_stable,
+                } => State::Transitioned {
+                    stable: *stable.as_ref().unwrap_unchecked(),
+                    previous_stable: *previous_stable.as_ref().unwrap_unchecked(),
+                },
+            }
+        }
+    }
+    /// Returns the current stable state. Never panics.
+    pub fn unwrap_stable(&self) -> T {
+        // SAFETY: since the Error type is Infallible unwrap can never panic
+        unsafe { self.stable().unwrap_unchecked() }
     }
 }
