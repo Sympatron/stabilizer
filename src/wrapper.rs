@@ -46,15 +46,34 @@ where
     }
 }
 
-impl<M, T, I> Input<T> for DebouncedInput<M, T, I>
+/// Trait to simplify conversion to DebouncedInput.
+/// Has a blanket implementation for [`Input<T>`]
+pub trait IntoDebounced<M: Monotonic, T>
+where
+    T: Copy,
+    Self: Sized,
+{
+    /// Convert an Input to a [`DebouncedInput`].
+    fn debounce(self, debounce_time: M::Duration) -> DebouncedInput<M, T, Self>;
+}
+
+#[cfg(feature = "ehal0")]
+use ehal0::digital::v2::{InputPin as InputPinV0, PinState as PinStateV0};
+#[cfg(feature = "ehal1")]
+use ehal1::digital::{InputPin as InputPinV1, PinState as PinStateV1};
+
+impl<M, T, I> IntoDebounced<M, T> for I
 where
     I: Input<T>,
     M: Monotonic,
     M::Duration: Copy,
     T: Copy + PartialEq,
 {
-    fn read(&mut self) -> T {
-        self.read().stable()
+    fn debounce(self, debounce_time: <M as Monotonic>::Duration) -> DebouncedInput<M, T, I> {
+        DebouncedInput::new(self, debounce_time)
+    }
+}
+
 #[cfg(feature = "ehal0")]
 impl<M, I> InputPinV0 for DebouncedInput<M, Result<PinStateV0, Infallible>, I>
 where

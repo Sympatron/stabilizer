@@ -52,7 +52,7 @@ use core::{convert::Infallible, ops::Add};
 
 pub use timed::TimedDebouncer;
 pub(crate) use value::{InitializedValue, UninitializedValue, Value};
-pub use wrapper::{DebouncedInput, Input};
+pub use wrapper::{DebouncedInput, Input, IntoDebounced};
 
 /// # Monotonic clock definition
 ///
