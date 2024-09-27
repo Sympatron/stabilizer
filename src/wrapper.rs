@@ -97,14 +97,14 @@ impl<M: Monotonic, T: Copy, I> ehal1::digital::ErrorType
 {
     type Error = Infallible;
 }
-#[cfg_attr(docsrs, doc(cfg(feature = "ehal1")))]
-#[cfg(feature = "ehal1")]
-impl<M: Monotonic, T: Copy, I> ehal1::digital::ErrorType
-    for DebouncedInputRef<M, Result<T, Infallible>, I>
-{
-    type Error = Infallible;
-}
-struct DebouncedInputRef<M: Monotonic, T: Copy, I>(RefCell<DebouncedInput<M, T, I>>);
+// #[cfg_attr(docsrs, doc(cfg(feature = "ehal1")))]
+// #[cfg(feature = "ehal1")]
+// impl<M: Monotonic, T: Copy, I> ehal1::digital::ErrorType
+//     for DebouncedInputRef<M, Result<T, Infallible>, I>
+// {
+//     type Error = Infallible;
+// }
+// struct DebouncedInputRef<M: Monotonic, T: Copy, I>(RefCell<DebouncedInput<M, T, I>>);
 
 // #[cfg_attr(docsrs, doc(cfg(feature = "ehal0")))]
 // #[cfg(feature = "ehal0")]

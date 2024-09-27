@@ -9,6 +9,12 @@ pub struct TimedDebouncer<M: Monotonic, T, V: Value<T = T> = InitializedValue<T>
     debounce_time: M::Duration,
 }
 
+impl<M: Monotonic, T, V: Value<T = T>> defmt::Format for TimedDebouncer<M, T, V> {
+    fn format(&self, _fmt: defmt::Formatter) {
+        todo!()
+    }
+}
+
 impl<M, T> TimedDebouncer<M, T, InitializedValue<T>>
 where
     M: Monotonic,

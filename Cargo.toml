@@ -1,12 +1,13 @@
 [package]
 name = "stabilizer"
-version = "0.1.0"
+version = "0.2.0"
 edition = "2021"
 
 [dependencies]
-rtic-time = { optional = true, version = "1.2.0" }
+rtic-time = { optional = true, version = "2.0.0" }
 ehal0 = { optional = true, version = "0.2.7", package = "embedded-hal", features = ["unproven"] }
-ehal1 = { optional = true, version = "1.0.0-rc.1", package = "embedded-hal" }
+ehal1 = { optional = true, version = "1.0.0", package = "embedded-hal" }
+defmt = "0.3.8"
 
 [features]
 default = ["rtic-time", "ehal0", "ehal1"]
