@@ -62,8 +62,6 @@ pub trait Monotonic {
     type Instant: Ord + Copy + Add<Self::Duration, Output = Self::Instant>;
     /// The type for duration, defining an duration of time.
     type Duration;
-    /// Default `Instant` value used to initialize the [`TimedDebouncer`]
-    const ZERO: Self::Instant;
     /// Get the current time.
     fn now() -> Self::Instant;
 }
@@ -72,7 +70,6 @@ pub trait Monotonic {
 impl<M: rtic_time::Monotonic> Monotonic for M {
     type Instant = M::Instant;
     type Duration = M::Duration;
-    const ZERO: Self::Instant = M::ZERO;
     fn now() -> Self::Instant {
         Self::now()
     }

@@ -5,7 +5,7 @@ use crate::{InitializedValue, Monotonic, State, UninitializedValue, Value};
 pub struct TimedDebouncer<M: Monotonic, T, V: Value<T = T> = InitializedValue<T>> {
     last_stable: V,
     last_value: V,
-    last_change_time: M::Instant,
+    last_change_time: Option<M::Instant>,
     debounce_time: M::Duration,
 }
 
@@ -27,7 +27,7 @@ where
         Self {
             last_stable: InitializedValue::new(initial_value),
             last_value: InitializedValue::new(initial_value),
-            last_change_time: M::ZERO,
+            last_change_time: None,
             debounce_time,
         }
     }
@@ -43,7 +43,7 @@ where
         Self {
             last_stable: Default::default(),
             last_value: Default::default(),
-            last_change_time: M::now(),
+            last_change_time: Some(M::now()),
             debounce_time,
         }
     }
@@ -81,16 +81,21 @@ where
         if let Some(last_value) = self.last_value.try_get() {
             if last_value != new_value {
                 // value changed since last update
-                self.last_change_time = M::now();
+                self.last_change_time = Some(M::now());
             }
         } else {
             // first value
-            self.last_change_time = M::now();
+            self.last_change_time = Some(M::now());
         }
 
         self.last_value = new_value.into();
 
-        if M::now() >= self.last_change_time + self.debounce_time {
+        let transitioned = if let Some(last_change_time) = self.last_change_time {
+            M::now() >= last_change_time + self.debounce_time
+        } else {
+            true
+        };
+        if transitioned {
             // transitioned to a new state
             let last_stable = self.last_stable;
             self.last_stable = new_value.into();
@@ -157,7 +162,6 @@ mod tests {
     impl Monotonic for MockMonotonic {
         type Instant = fugit::TimerInstantU64<1_000_000>;
         type Duration = fugit::TimerDurationU64<1_000_000>;
-        const ZERO: Self::Instant = Self::Instant::from_ticks(0);
 
         fn now() -> Self::Instant {
             if MUTEX.try_lock().is_ok() {
