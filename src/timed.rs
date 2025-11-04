@@ -9,6 +9,9 @@ pub struct TimedDebouncer<M: Monotonic, T, V: Value<T = T> = InitializedValue<T>
     debounce_time: M::Duration,
 }
 
+/// Type alias for a TimedDebouncer with an unkown start value.
+pub type UninitializedTimedDebouncer<M, T> = TimedDebouncer<M, T, UninitializedValue<T>>;
+
 #[cfg(feature = "defmt")]
 impl<M: Monotonic, T, V: Value<T = T>> defmt::Format for TimedDebouncer<M, T, V> {
     fn format(&self, _fmt: defmt::Formatter) {

@@ -19,7 +19,7 @@ pub trait Value: Deref<Target = Self::V> + private::Sealed {
 }
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 #[cfg_attr(feature = "defmt", derive(defmt::Format))]
-pub(crate) struct UninitializedValue<T>(Option<T>);
+pub struct UninitializedValue<T>(Option<T>);
 impl<T> private::Sealed for UninitializedValue<T> {}
 impl<T: Clone> Value for UninitializedValue<T> {
     type T = T;

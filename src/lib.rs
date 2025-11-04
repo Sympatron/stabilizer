@@ -50,7 +50,7 @@ mod wrapper;
 
 use core::{convert::Infallible, ops::Add};
 
-pub use timed::TimedDebouncer;
+pub use timed::{TimedDebouncer, UninitializedTimedDebouncer};
 pub(crate) use value::{InitializedValue, UninitializedValue, Value};
 pub use wrapper::{DebouncedInput, Input, IntoDebounced};
 
@@ -99,6 +99,11 @@ pub enum State<T, V: Value<T = T>> {
         previous_stable: V::V,
     },
 }
+
+/// Initialized state type alias.
+pub type InitializedState<T> = State<T, InitializedValue<T>>;
+/// Uninitialized state type alias.
+pub type UninitializedState<T> = State<T, UninitializedValue<T>>;
 
 impl<T: Clone, V: Value<T = T>> State<T, V>
 where
