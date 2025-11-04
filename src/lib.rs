@@ -80,6 +80,7 @@ impl<M: rtic_time::Monotonic> Monotonic for M {
 
 /// Represents the state of a debounced input.
 #[derive(Debug, PartialEq, Eq)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub enum State<T, V: Value<T = T>> {
     /// Indicates a stable state with a known value.
     Stable {

@@ -18,6 +18,7 @@ pub trait Value: Deref<Target = Self::V> + private::Sealed {
     fn default() -> Self::V;
 }
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub(crate) struct UninitializedValue<T>(Option<T>);
 impl<T> private::Sealed for UninitializedValue<T> {}
 impl<T: Copy> Value for UninitializedValue<T> {
@@ -53,7 +54,8 @@ impl<T> From<T> for UninitializedValue<T> {
         UninitializedValue(Some(value))
     }
 }
-#[derive(Default, Clone, Copy, PartialEq, Eq, Debug)]
+#[derive(Default, Clone, PartialEq, Eq, Debug)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub struct InitializedValue<T>(T);
 impl<T> private::Sealed for InitializedValue<T> {}
 impl<T: Copy> Value for InitializedValue<T> {
