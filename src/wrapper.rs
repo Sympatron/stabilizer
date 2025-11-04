@@ -1,4 +1,5 @@
-use core::{cell::RefCell, convert::Infallible};
+#[cfg(feature = "ehal0")]
+use core::convert::Infallible;
 
 use crate::{InitializedValue, Monotonic, State, TimedDebouncer};
 
