@@ -6,10 +6,15 @@ mod private {
 
 /// Implementation detail to abstract away the differences between initialized and uninitialized debouncers
 pub trait Value: Deref<Target = Self::V> + private::Sealed {
+    /// The type of the value
     type T;
+    /// The type of the value when it is initialized
     type V;
+    /// Get the value
     fn get(&self) -> Self::V;
+    /// Try to get the value if it is initialized
     fn try_get(&self) -> Option<Self::T>;
+    /// Get the default value
     fn default() -> Self::V;
 }
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
