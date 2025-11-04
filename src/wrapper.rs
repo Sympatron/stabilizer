@@ -9,7 +9,7 @@ pub trait Input<T> {
 }
 
 /// Generic debouncing wrapper for any input implementing [`Input`].
-pub struct DebouncedInput<M: Monotonic, T: Copy, I> {
+pub struct DebouncedInput<M: Monotonic, T: Clone, I> {
     debouncer: TimedDebouncer<M, T, InitializedValue<T>>,
     input: I,
 }
@@ -19,7 +19,7 @@ where
     I: Input<T>,
     M: Monotonic,
     M::Duration: Copy,
-    T: Copy + PartialEq,
+    T: Clone + PartialEq,
 {
     /// Creates a new [`DebouncedInput`] by wrapping an [`Input`]
     pub fn new(mut input: I, debounce_time: M::Duration) -> Self {
@@ -38,7 +38,7 @@ impl<M, T, I> DebouncedInput<M, T, I>
 where
     M: Monotonic,
     M::Duration: Copy,
-    T: Copy + PartialEq,
+    T: Clone + PartialEq,
 {
     /// Read the last stable state of the input.
     pub fn read_stable(&self) -> T {
@@ -50,7 +50,7 @@ where
 /// Has a blanket implementation for [`Input<T>`]
 pub trait IntoDebounced<M: Monotonic, T>
 where
-    T: Copy,
+    T: Clone,
     Self: Sized,
 {
     /// Convert an Input to a [`DebouncedInput`].
@@ -67,7 +67,7 @@ where
     I: Input<T>,
     M: Monotonic,
     M::Duration: Copy,
-    T: Copy + PartialEq,
+    T: Clone + PartialEq,
 {
     fn debounce(self, debounce_time: <M as Monotonic>::Duration) -> DebouncedInput<M, T, I> {
         DebouncedInput::new(self, debounce_time)

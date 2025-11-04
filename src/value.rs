@@ -21,16 +21,16 @@ pub trait Value: Deref<Target = Self::V> + private::Sealed {
 #[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub(crate) struct UninitializedValue<T>(Option<T>);
 impl<T> private::Sealed for UninitializedValue<T> {}
-impl<T: Copy> Value for UninitializedValue<T> {
+impl<T: Clone> Value for UninitializedValue<T> {
     type T = T;
     type V = Option<T>;
     #[inline(always)]
     fn get(&self) -> Self::V {
-        self.0
+        self.0.clone()
     }
     #[inline(always)]
     fn try_get(&self) -> Option<Self::T> {
-        self.0
+        self.0.clone()
     }
     fn default() -> Self::V {
         None
@@ -57,17 +57,18 @@ impl<T> From<T> for UninitializedValue<T> {
 #[derive(Default, Clone, PartialEq, Eq, Debug)]
 #[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub struct InitializedValue<T>(T);
+impl<T: Copy> Copy for InitializedValue<T> {}
 impl<T> private::Sealed for InitializedValue<T> {}
-impl<T: Copy> Value for InitializedValue<T> {
+impl<T: Clone> Value for InitializedValue<T> {
     type T = T;
     type V = T;
     #[inline(always)]
     fn get(&self) -> Self::V {
-        self.0
+        self.0.clone()
     }
     #[inline(always)]
     fn try_get(&self) -> Option<Self::T> {
-        Some(self.0)
+        Some(self.0.clone())
     }
     #[inline(always)]
     fn default() -> Self::V {

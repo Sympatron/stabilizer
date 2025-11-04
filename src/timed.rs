@@ -19,13 +19,13 @@ impl<M: Monotonic, T, V: Value<T = T>> defmt::Format for TimedDebouncer<M, T, V>
 impl<M, T> TimedDebouncer<M, T, InitializedValue<T>>
 where
     M: Monotonic,
-    T: Copy,
+    T: Clone,
     M::Duration: Copy,
 {
     /// Creates a new Debouncer with a known initial value.
     pub fn new(initial_value: T, debounce_time: M::Duration) -> Self {
         Self {
-            last_stable: InitializedValue::new(initial_value),
+            last_stable: InitializedValue::new(initial_value.clone()),
             last_value: InitializedValue::new(initial_value),
             last_change_time: None,
             debounce_time,
@@ -35,7 +35,7 @@ where
 impl<M, T> TimedDebouncer<M, T, UninitializedValue<T>>
 where
     M: Monotonic,
-    T: Copy,
+    T: Clone,
     M::Duration: Copy,
 {
     /// Creates a new Debouncer that starts with an unkown state.
@@ -65,9 +65,9 @@ impl<M, T, V> TimedDebouncer<M, T, V>
 where
     M: Monotonic,
     M::Duration: Copy,
-    T: PartialEq + Copy,
-    V: Value<T = T> + Copy + From<T>,
-    V::V: Copy + From<T>,
+    T: PartialEq + Clone,
+    V: Value<T = T> + Clone + From<T>,
+    V::V: Clone + From<T>,
 {
     /// Updates the debouncer state with a new value and returns the current state.
     pub fn update(self: &mut Self, new_value: T) -> State<T, V> {
@@ -88,7 +88,7 @@ where
             self.last_change_time = Some(M::now());
         }
 
-        self.last_value = new_value.into();
+        self.last_value = new_value.clone().into();
 
         let transitioned = if let Some(last_change_time) = self.last_change_time {
             M::now() >= last_change_time + self.debounce_time
@@ -97,16 +97,16 @@ where
         };
         if transitioned {
             // transitioned to a new state
-            let last_stable = self.last_stable;
-            self.last_stable = new_value.into();
+            let last_stable = self.last_stable.clone();
+            self.last_stable = new_value.clone().into();
             State::Transitioned {
-                stable: new_value,
-                previous_stable: *last_stable,
+                stable: new_value.clone(),
+                previous_stable: (*last_stable).clone(),
             }
         } else {
             // not stable at the moment
             State::Unstable {
-                stable: *self.last_stable,
+                stable: (*self.last_stable).clone(),
                 most_recent: new_value.into(),
             }
         }
@@ -134,11 +134,11 @@ impl<M, T, V> TimedDebouncer<M, T, V>
 where
     M: Monotonic,
     V: Value<T = T>,
-    V::V: Copy,
+    V::V: Clone,
 {
     /// Reads the current stable value, if available. This does not update the internal state and just returns the last stable value.
     pub fn read_stable(&self) -> V::V {
-        *self.last_stable
+        (*self.last_stable).clone()
     }
 }
 

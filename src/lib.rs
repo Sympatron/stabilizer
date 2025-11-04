@@ -100,36 +100,36 @@ pub enum State<T, V: Value<T = T>> {
     },
 }
 
-impl<T: Copy, V: Value<T = T>> State<T, V>
+impl<T: Clone, V: Value<T = T>> State<T, V>
 where
-    V::V: Copy + From<T>,
+    V::V: Clone + From<T>,
 {
     /// Returns the current stable value of the state, if available.
     pub fn stable(self: &Self) -> V::V {
         match self {
-            State::Stable { value } => (*value).into(),
+            State::Stable { value } => (*value).clone().into(),
             State::Unstable {
                 stable,
                 most_recent: _,
-            } => (*stable).into(),
+            } => (*stable).clone().into(),
             State::Transitioned {
                 stable: new_stable,
                 previous_stable: _,
-            } => (*new_stable).into(),
+            } => (*new_stable).clone().into(),
         }
     }
     /// Returns the most recent value of the state, if available. This value is potentially not stable yet.
     pub fn most_recent(self: &Self) -> V::V {
         match self {
-            State::Stable { value } => (*value).into(),
+            State::Stable { value } => (*value).clone().into(),
             State::Unstable {
                 stable: _,
                 most_recent,
-            } => *most_recent,
+            } => (*most_recent).clone(),
             State::Transitioned {
                 stable: new_stable,
                 previous_stable: _,
-            } => (*new_stable).into(),
+            } => (*new_stable).clone().into(),
         }
     }
 }
